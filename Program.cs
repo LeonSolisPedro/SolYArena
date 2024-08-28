@@ -5,29 +5,16 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 
 //Services
-
-// Specify the dist folder and zip file URL
-string normalFolder = Path.Combine(Directory.GetCurrentDirectory());
-string distFolder = Path.Combine(Directory.GetCurrentDirectory(), "dist");
-string zipFileUrl = "https://storage.googleapis.com/onlinebookbinaries/dist.v1.zip";
-string tempZipFile = Path.Combine(Directory.GetCurrentDirectory(), "dist.zip");
-
-// Delete the dist folder if it exists
+var zipFileUrl = "https://storage.googleapis.com/onlinebookbinaries/dist.v1.zip";
+var tempZipFile = Path.Combine(Directory.GetCurrentDirectory(), "dist.zip");
+var distFolder = Path.Combine(Directory.GetCurrentDirectory(), "dist");
+var normalFolder = Path.Combine(Directory.GetCurrentDirectory());
 if (Directory.Exists(distFolder))
     Directory.Delete(distFolder, true);
-
-
-// Download the zip file
 using (var client = new WebClient())
     client.DownloadFile(zipFileUrl, tempZipFile);
-
-
-// Unzip the downloaded file to the proyect folder
 ZipFile.ExtractToDirectory(tempZipFile, normalFolder);
-
-// Delete the temporary zip file
 File.Delete(tempZipFile);
-
 
 var externalAssemblyPath = Path.Combine(Directory.GetCurrentDirectory(), "dist/Web.dll");
 var assembly = Assembly.LoadFile(externalAssemblyPath);

@@ -1,10 +1,11 @@
 using System.IO.Compression;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 
-//Services
+//Downloading files
 var zipFileUrl = "https://storage.googleapis.com/onlinebookbinaries/dist.v1.zip";
 var tempZipFile = Path.Combine(Directory.GetCurrentDirectory(), "dist.zip");
 var distFolder = Path.Combine(Directory.GetCurrentDirectory(), "dist");
@@ -13,9 +14,10 @@ if (Directory.Exists(distFolder))
     Directory.Delete(distFolder, true);
 using (var client = new WebClient())
     client.DownloadFile(zipFileUrl, tempZipFile);
-ZipFile.ExtractToDirectory(tempZipFile, normalFolder);
+ZipFile.ExtractToDirectory(tempZipFile, distFolder);
 File.Delete(tempZipFile);
 
+//Services
 var externalAssemblyPath = Path.Combine(Directory.GetCurrentDirectory(), "dist/Web.dll");
 var assembly = Assembly.LoadFile(externalAssemblyPath);
 var builder = WebApplication.CreateBuilder(args);
@@ -24,7 +26,12 @@ var mvcBuilder = builder.Services.AddControllersWithViews(options => {
     foreach (var filter in filters) { options.Filters.Add(filter); }
 }).AddApplicationPart(assembly);
 if (builder.Environment.IsDevelopment()) mvcBuilder.AddRazorRuntimeCompilation();
-builder.Services.AddHttpClient("client", x => { x.BaseAddress = new Uri($"{builder.Configuration["Settings:BaseAPIURL"]}/"); });
+builder.Services.AddHttpClient("client", x =>
+{
+    x.BaseAddress = new Uri($"{builder.Configuration["Settings:BaseAPIURL"]}/");
+    var token = builder.Configuration["Settings:Token"] ?? "";
+    x.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+});
 var services = assembly.GetTypes().Where(x => x.IsClass && x.Namespace == "Web.Services");
 foreach (var service in services) { builder.Services.AddScoped(service); }
 
